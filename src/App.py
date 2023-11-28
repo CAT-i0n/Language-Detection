@@ -2,7 +2,9 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import filedialog
 from tkinter import ttk
-
+from .alphabetical_method import AlphabeticalMethod
+from .word_frequency_method import WordFrequency
+from .neural_network_method import NeuralNetworkMethod
 
 class App(tk.Tk):
     def __init__(self):
@@ -11,6 +13,9 @@ class App(tk.Tk):
         self.title('Editor')
         self.geometry("800x600")
         self.folder_path = tk.StringVar()
+        self.alphabetical = AlphabeticalMethod()
+        self.word_frequency = WordFrequency()
+        self.neural_recognozer = NeuralNetworkMethod()
         self.__build()
 
     def __build(self):
@@ -23,9 +28,6 @@ class App(tk.Tk):
         help_button = tk.Button(options_frame, text="Help", command=self.open_help)
         help_button.pack(side=tk.LEFT)
 
-        update_button = tk.Button(options_frame, text="Update", command=self.update_docs)
-        update_button.pack(side=tk.LEFT)
-
         # Entry to type search string.
         search_frame = tk.Frame(self)
         search_frame.pack()
@@ -34,38 +36,55 @@ class App(tk.Tk):
         self.method_box = ttk.Combobox(
             master = search_frame,
             state="readonly",
-            values=["Alphabet", "Word frequency", "Neural network"]
+            values=["Alphabetical", "Word frequency", "Neural network"]
         )
         self.method_box.pack(side=tk.LEFT)
-        self.method_box.set("Alphabet")
+        self.method_box.set("Alphabetical")
         
         go_button = tk.Button(search_frame, text="Load", command=self.recognize_lang)
         go_button.pack()
 
         # Text box to display output of main text.
         self.text_box = ScrolledText(
-            width=110, borderwidth=2, relief="sunken", padx=20, font=("Helvetica", 15))
+            width=100, height = 20,  borderwidth=2, relief="sunken", padx=20, font=("Helvetica", 15))
         self.text_box.pack()
+
+        self.lang_box = ScrolledText(
+            width=110, borderwidth=2, relief="sunken", padx=20, font=("Helvetica", 15))
+        self.lang_box.pack()
 
         # Button to clear the text box display.
         clear_button = tk.Button(
             self, text="Clear", command=lambda: self.text_box.delete("1.0", tk.END))
         clear_button.pack()
 
-    def update_docs(self):
-        pass
 
     def recognize_lang(self):
         file = filedialog.askopenfilename()
         text = open(file).read()
+        method = self.method_box.current()
+        match method:
+            case 0:
+                lang = self.alphabetical.find_language(file)
+            case 1:
+                lang = self.word_frequency.find_language(file)
+            case 2:
+                lang = self.neural_recognozer.predict_language(file)
+                print(lang)
+        self.print_to_textbox(text, lang)
         
-        self.print_to_textbox(text)
 
 
 
-    def print_to_textbox(self, text):
+    def print_to_textbox(self, text, lang):
         self.text_box.delete("1.0", tk.END)
+        self.lang_box.delete("1.0", tk.END)
         self.text_box.insert("end", text)
+        match lang:
+            case "rus":
+                self.lang_box.insert("end", "Язык текста - русский")
+            case "eng":
+                self.lang_box.insert("end", "Язык текста - английский")
 
     def open_help(self):
         top = tk.Toplevel()
